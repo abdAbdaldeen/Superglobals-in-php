@@ -1,17 +1,27 @@
 <?php 
 include "data.php";
 session_start();
+// ==================
+if (!isset($_SESSION["questionsID"])) {
+    header("Location:index.php");
+}
+// ==================
+
+if (isset($_GET["id"])) {
+    $_SESSION["currentQuestion"]=$_GET["id"];
+    $pevAnswerID=$_SESSION["allAnswers"][$_GET["id"]]["answerID"];
+}
+// ==================
 $maxTime =20;
 // ================
 $questionsID=$_SESSION["questionsID"];
 $question=$data[$questionsID[$_SESSION["currentQuestion"]]];
 if (isset($_SESSION["setTime"])) {
     $_SESSION['time']=time()*1000 + 1000 * 60 * $maxTime;
+    $_SESSION["forTotalTime"]=time();
     unset($_SESSION["setTime"]);
 }
-if (!isset($_SESSION["questionsID"])) {
-    header("Location:index.php");
-}
+
 
 ?>
 <!DOCTYPE html>
@@ -29,34 +39,49 @@ if (!isset($_SESSION["questionsID"])) {
         <div class="question">
             <div class="heder">
                 <?php echo "<p>Total Question - ".count($questionsID)."</p>";?>
-                <p id="timer"></p>
+                <p id="timer">#h #m #s</p>
                 <?php echo "<p>Max Time - $maxTime Min</p>";?>
             </div>
             <form class="body" action="<?php echo $_SERVER['PHP_SELF'];?>" method="post">
                 <?php 
                 echo "<p><b>Q - {$question['question']}</b></p>";
-                foreach($question['answers'] as $k=> $answer){
-                    echo '  <input type="radio" id="'.$k.'" name="answer" value="'.$k.'">
-                    <label for="'.$k.'">'.$answer['answer'].'</label><br>';
+                if (isset($pevAnswerID)) {
+                    foreach($question['answers'] as $k=> $answer){
+                        if ($pevAnswerID == $k) {
+                            echo '<input type="radio" id="'.$k.'" checked="checked" name="answer" value="'.$k.'"><label for="'.$k.'">'.$answer['answer'].'</label><br>';
+                        }
+                        else{
+                            echo '<input type="radio" id="'.$k.'" name="answer" value="'.$k.'"><label for="'.$k.'">'.$answer['answer'].'</label><br>';
+                        }
+                        
+                    }
+                    
+                }
+                else{
+                    foreach($question['answers'] as $k=> $answer){
+                        echo '<input type="radio" id="'.$k.'" name="answer" value="'.$k.'"><label for="'.$k.'">'.$answer['answer'].'</label><br>';
+                    }
+
                 }
                 if ($_SESSION["currentQuestion"]==count($questionsID)-1) {
                     echo '<input type="submit" value="Finish">';
                 }else{
                     echo '<input type="submit" value="Next Question">';
-
                 }
                 ?>
 
             </form>
             <?php
-            function setAnswers($x){
-                    $_SESSION["allAnswers"][$_SESSION["currentQuestion"]]=$x;
+            function setAnswers($isTrue,$answerID){
+                    $_SESSION["allAnswers"][$_SESSION["currentQuestion"]]["isTrue"]=$isTrue;
+                    $_SESSION["allAnswers"][$_SESSION["currentQuestion"]]["answerID"]=$answerID;
             }
                 if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $answerID = $_POST['answer'];
-                    if (isset($question['answers'][$answerID]['isTrue'])) setAnswers(true);
-                    else setAnswers(false);
+                    if (isset($question['answers'][$answerID]['isTrue'])) setAnswers(true,$answerID);
+                    else setAnswers(false,$answerID);
                     if ($_SESSION["currentQuestion"]==count($questionsID)-1) {
+                        $_SESSION["doneTime"]=time();
                         header("Location:done.php");
                     }
                     else{
@@ -70,19 +95,18 @@ if (!isset($_SESSION["questionsID"])) {
             <?php 
             $i=1;
             while ($i <= count($questionsID)){
-                if ($i-1 == $_SESSION["currentQuestion"]) echo "<p class='current'>{$i}</p>";
-                else echo "<p>{$i}</p>";
+                $id=$i-1;
+                if ($id == $_SESSION["currentQuestion"]) echo "<p class='current'>{$i}</p>";
+                else if(!isset($_SESSION["allAnswers"][$id]))echo "<p>{$i}</p>";
+                else echo "<a href='question.php?id=$id'><p>$i</p></a>";
                 $i++;
             }
             ?>
-
 
         </div>
     </div>
 
     <!-- ======================== -->
-    <script>
-    </script>
     <?php 
     echo '
     <script>

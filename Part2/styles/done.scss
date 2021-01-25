@@ -1,5 +1,6 @@
 .qNumCon{
-    display: flex;
+    display: inline-flex;
+    justify-content: center;
     flex-wrap: wrap;
     align-content: flex-start;
     p{
@@ -16,4 +17,10 @@
     .true{
         background-color:green;
     }
+}
+.donePage{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
 }
